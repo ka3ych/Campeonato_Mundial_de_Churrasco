@@ -57,3 +57,10 @@ Seguir os passos abaixo para clonar o projeto, configurar o banco de dados e exe
     ```bash
     python churras.py
     ```
+
+
+   ---
+   ## Referências
+   - Conexão Python com o PostgreSQL:   [Link do vídeo no YouTube](https://youtu.be/tx5lmqBnArs?si=MwTL_P5bRNGN0oSj)
+   - Documentação Oficial do CustomTkinter: [Link da documentação](https://customtkinter.tomschimansky.com/)  
+   - GitHub com exemplos [Link](https://github.com/tomschimansky/customtkinter)  -> boa parte do deseign foi baseado nos exemplos deste repositório
