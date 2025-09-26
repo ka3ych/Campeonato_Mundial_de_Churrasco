@@ -31,3 +31,10 @@ class HomeFrame(customtkinter.CTkFrame):
         self.home_frame_button_4 = customtkinter.CTkButton(self.home_frame, text="CTkButton", image=self.image_icon_image, compound="bottom", anchor="w")
         self.home_frame_button_4.grid(row=4, column=0, padx=20, pady=10)
         """
+        self.text = customtkinter.CTkLabel(
+            self,
+            text="⚠️ ⚠️ Página em desenvolvimento ⚠️ ⚠️",
+            font=customtkinter.CTkFont(size=20, weight="bold"),
+            text_color="#E30000"
+        )
+        self.text.grid(row=1, column=0, padx=100, pady=100)

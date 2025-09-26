@@ -9,7 +9,8 @@ class TeamFrame(customtkinter.CTkFrame):
         self.title = customtkinter.CTkLabel(
             self, 
             text="Gerenciamento de Equipes",
-            font=customtkinter.CTkFont(size=40, weight="bold"))
+            font=customtkinter.CTkFont(size=40, weight="bold")
+        )
     
         self.title.grid(row=0, column=0, padx=20, pady=10)
 
@@ -19,3 +20,11 @@ class TeamFrame(customtkinter.CTkFrame):
             image=images["team"])
         
         self.image_label.grid(row=0, column=1, padx=(10, 200), pady=10)
+
+        self.text = customtkinter.CTkLabel(
+            self,
+            text="⚠️ ⚠️ Página em desenvolvimento ⚠️ ⚠️",
+            font=customtkinter.CTkFont(size=20, weight="bold"),
+            text_color="#E30000"
+        )
+        self.text.grid(row=1, column=0, padx=100, pady=100)

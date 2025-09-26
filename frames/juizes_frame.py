@@ -18,7 +18,8 @@ class JuizFrame(customtkinter.CTkFrame):
         self.entry = customtkinter.CTkEntry(
             self, 
             placeholder_text="Digite sua pesquisa", 
-            width=300
+            width=100,
+            height=50
         )
         
         self.entry.grid(row=1, column=0, padx=(20, 0), pady=(20, 20), sticky="nsew")
@@ -26,9 +27,10 @@ class JuizFrame(customtkinter.CTkFrame):
         self.optionmenu = customtkinter.CTkOptionMenu(
             self, 
             dynamic_resizing=False,
+            height=50,
             values=["Nome", "País", "Cargo"]
         )
-        
+        self.optionmenu.set("Value")
         self.optionmenu.grid(row=1, column=1, padx=(20,0), pady=(20, 20))
 
         self.search_button = customtkinter.CTkButton(
@@ -52,10 +54,11 @@ class JuizFrame(customtkinter.CTkFrame):
         # Crie o frame de rolagem para a tabela
         self.table = customtkinter.CTkScrollableFrame(
             self, 
-            corner_radius=0
+            corner_radius=0,
+            height=500
         )
         
-        self.table.grid(row=2, column=0, columnspan=4, padx=10, pady=10, sticky="nsew")
+        self.table.grid(row=2, column=0, columnspan=3, padx=20, pady=10, sticky="nsew")
 
         # Crie os cabeçalhos da tabela
         headers = ["ID_Juiz", "Nome", "País", "Cargo", "Data de Admissão"]
