@@ -7,5 +7,5 @@ def load_images():
         "churrasco": customtkinter.CTkImage(Image.open("img/churra.png"), size=(180, 180)),
         "team": customtkinter.CTkImage(Image.open("img/equipe_anima.gif"), size=(250, 180)),
         "meme": customtkinter.CTkImage(Image.open("img/meme.jpg"), size=(450, 270)),
-        "jurado": customtkinter.CTkImage(Image.open("img/jurado.png"), size=(300, 300))
+        "jurado": customtkinter.CTkImage(Image.open("img/jurado.png"), size=(200, 200))
     }

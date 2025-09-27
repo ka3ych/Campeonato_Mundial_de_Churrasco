@@ -1,4 +1,14 @@
 import customtkinter
+import psycopg2
+from psycopg2 import sql
+
+conexao = psycopg2.connect (
+	user="postgres",
+	password="admin123",
+	host="127.0.0.1",
+	port="5432",
+	database="churras"
+)
 
 class JuizFrame(customtkinter.CTkFrame):
     def __init__(self, parent, images):
@@ -33,33 +43,45 @@ class JuizFrame(customtkinter.CTkFrame):
         )
         self.frame_filtros.grid(row=2, column=0, columnspan=9, padx=20, pady=0,sticky="nsew")
         self.frame_filtros.grid_columnconfigure((0,1,2,3,4,5,6, 7,8, 9, 10), weight=1)
+
+        cursor = conexao.cursor() 
+        consulta_pais = 'SELECT DISTINCT pais_origem FROM Pessoa WHERE pais_origem IS NOT NULL ORDER BY pais_origem'
+        cursor.execute(consulta_pais)
+        dados_paises = cursor.fetchall()
+        cursor.close()
+
+        lista_paises = [pais[0] for pais in dados_paises if pais[0] is not None]
+        lista_paises.insert(0, "Todos")
     
-        
         self.filtro_pais = customtkinter.CTkOptionMenu(
             self.frame_filtros,
             dynamic_resizing=True,
             height=40,
-            values=["Todos", "Brasil", "Espanha", "Estados Unidos"] #aqui será de acordo com os países que serão colocados na tabela -> modificar depois
+            values=lista_paises,
+            command=self.aplicar_filtro_pais
         )
         self.filtro_pais.set("Filtrar por país")
         self.filtro_pais.grid(row=0, column=0, padx=(0, 5), pady=(10,10), sticky="w")
+
+        cursor = conexao.cursor()
+        consulta_cargo = 'SELECT DISTINCT cargo FROM Juiz WHERE cargo IS NOT NULL ORDER BY cargo'
+        cursor.execute(consulta_cargo)
+        dados_cargos = cursor.fetchall()
+        cursor.close()
+
+        lista_cargos = [cargo[0] for cargo in dados_cargos if cargo[0] is not None]
+        lista_cargos.insert(0, "Todos")
+
 
         self.filtro_cargo = customtkinter.CTkOptionMenu(
             self.frame_filtros,
             dynamic_resizing=True,
             height=40,
-            values=["Todos", "Chef Executivo", "Mestre Churrasqueiro", "Crítica Gatronômica"] #aqui será de acordo com os países que serão colocados na tabela -> modificar depois
+            values=lista_cargos,
+            command=self.aplica_filtro_cargo
         )
         self.filtro_cargo.set("Filtrar por cargo")
         self.filtro_cargo.grid(row=0, column=1, padx=(0,5), pady=(10,10), sticky="w")
-
-        self.entry = customtkinter.CTkEntry(
-            self.frame_filtros, 
-            placeholder_text="Pesquisar por nome...", 
-            height=40,
-            fg_color = "transparent"
-        )
-        self.entry.grid(row=0, column=2, padx=(0,5), columnspan=3, pady=(10, 10), sticky="ew")
 
         # FRAMES PARA OS PAINÉIS
 
@@ -99,46 +121,15 @@ class JuizFrame(customtkinter.CTkFrame):
         
         self.table_frame.grid(row=3, column=0, columnspan=12, padx=20, pady=(10, 20), sticky="nsew")
 
-        # Crie os cabeçalhos da tabela
-        headers = ["ID_Juiz", "Nome", "País", "Cargo", "Data de Admissão"]
-        for col, header in enumerate(headers):
-            header_label = customtkinter.CTkLabel(
-                self.table_frame, 
-                text=header, 
-                font=customtkinter.CTkFont(weight="bold")
-            )
-            header_label.grid(row=0, column=col, padx=10, pady=5, sticky="w")
-            self.table_frame.grid_columnconfigure(col, weight=1)
+        self.desenhar_tabela()
 
-        # Dados de exemplo para a tabela
-        juizes_data = [
-            {"id": 1, "nome": "João Silva", "pais": "Brasil", "cargo": "Chef Executivo", "data": "12/09/2020"},
-            {"id": 2, "nome": "Maria Garcia", "pais": "Espanha", "cargo": "Crítica Gastronômica", "data": "15/03/2010"},
-            {"id": 3, "nome": "Peter Jones", "pais": "Estados Unidos", "cargo": "Mestre Churrasqueiro", "data": "30/11/2019"},
-            {"id": 4, "nome": "João Silva", "pais": "Brasil", "cargo": "Chef Executivo", "data": "12/09/2020"}
-        ]
-
-        # Adicione os juízes à tabela
-        for i, juiz in enumerate(juizes_data):
-            row = i + 1
-
-            customtkinter.CTkLabel(self.table_frame, text=juiz["id"]).grid(row=row, column=0, padx=10, pady=5)
-            customtkinter.CTkLabel(self.table_frame, text=juiz["nome"]).grid(row=row, column=1, padx=10, pady=5)
-            customtkinter.CTkLabel(self.table_frame, text=juiz["pais"]).grid(row=row, column=2, padx=10, pady=5)
-            customtkinter.CTkLabel(self.table_frame, text=juiz["cargo"]).grid(row=row, column=3, padx=10, pady=5)
-            customtkinter.CTkLabel(self.table_frame, text=juiz["data"]).grid(row=row, column=4, padx=10, pady=5)
-
-            # Botões de Ação
-            customtkinter.CTkButton(self.table_frame, text="Editar", width=60, fg_color="#00BF6E").grid(row=row, column=5, padx=5, pady=5)
-            customtkinter.CTkButton(self.table_frame, text="Excluir", width=60, fg_color="#E30000", command=self.open_dialog_event).grid(row=row, column=6, padx=5, pady=5)
-        
         # ELEMENTOS DO PAINEL LATERAL PARA CADASTRO DE UM NOVO JUIZ
         form_title = customtkinter.CTkLabel(
             self.painel_lateral,
             text="Adicionar Novo Juiz",
-            font=customtkinter.CTkFont(size=25, weight="bold")
+            font=customtkinter.CTkFont(size=16, weight="bold")
         )
-        form_title.grid(row=1, column=0, padx=20, pady=(5, 10), sticky="ew")
+        form_title.grid(row=1, column=0, padx=20, pady=5, sticky="ew")
 
         campos = [
             ("Nome", "Digite o nome completo", "entry"),
@@ -152,7 +143,7 @@ class JuizFrame(customtkinter.CTkFrame):
             self.painel_lateral, 
             text="", 
             image=images["jurado"])
-        self.image_label.grid(row=0, column=0, padx=10, pady=(0,5))
+        self.image_label.grid(row=0, column=0, padx=5, pady=0)
 
         self.form_entries = {}
 
@@ -161,7 +152,7 @@ class JuizFrame(customtkinter.CTkFrame):
                 self.painel_lateral, 
                 text=label_text
             )
-            label.grid(row=2*i + 2, column=0, padx=20, pady=(10,0), sticky="w")
+            label.grid(row=2*i + 2, column=0, padx=20, pady=(5,0), sticky="w")
 
             if tipo == "dropdown":
                 entrada = customtkinter.CTkOptionMenu(
@@ -175,7 +166,7 @@ class JuizFrame(customtkinter.CTkFrame):
                     placeholder_text=placeholder,
                     height=30
                 )
-            entrada.grid(row=2*i + 3, column=0, padx=20, pady=(5, 10), sticky="ew")
+            entrada.grid(row=2*i + 3, column=0, padx=20, pady=5, sticky="ew")
             self.form_entries[label_text.lower().replace(" ", "_")] = entrada
 
             # Botão de Adicionar
@@ -183,31 +174,133 @@ class JuizFrame(customtkinter.CTkFrame):
                 self.painel_lateral, 
                 text="Salvar Juiz", 
                 fg_color="#00BF6E", 
-                height=40,
+                height=30,
                 # command=self.salvar_juiz # Conectar depois à sua função de salvar no banco de dados
             )
-            self.salvar_button.grid(row=len(campos)*2 + 4, column=0, padx=20, pady=(30, 10), sticky="ew")
+            self.salvar_button.grid(row=len(campos)*2 + 4, column=0, padx=20, pady=(20, 10), sticky="ew")
 
             # Botão de Limpar/Cancelar
             self.limpar_button = customtkinter.CTkButton(
                 self.painel_lateral, 
                 text="Limpar Campos", 
                 fg_color="#3EB599",
-                height=40,
+                height=30,
                 command=self.limpar_juiz
             )
             self.limpar_button.grid(row=len(campos)*2 + 5, column=0, padx=20, pady=(0, 20), sticky="ew")
+    
+    def aplica_filtro_cargo(self, cargo):
+        self.desenhar_tabela(filtro_cargo=cargo)
+    
+    def aplicar_filtro_pais(self, pais):
+        self.desenhar_tabela(filtro_pais=pais)
+
+    # Dentro da classe JuizFrame:
+    def desenhar_tabela(self, filtro_pais=None, filtro_cargo=None):
+        for widget in self.table_frame.winfo_children():
+            widget.destroy()
+        
+        sql_base = """
+            SELECT 
+                p.id, p.nome, p.pais_origem, j.cargo, j.data_inicio
+            FROM 
+                Pessoa p JOIN Juiz j ON p.id = j.pessoa_id
+        """
+
+        args = []
+        condicoes = []
+
+        if filtro_pais and filtro_pais != "Todos":
+            condicoes.append(" p.pais_origem = %s")
+            args.append(filtro_pais)
+
+        if filtro_cargo and filtro_cargo != "Todos":
+            condicoes.append(" j.cargo = %s")
+            args.append(filtro_cargo)
+        
+        sql_consulta = sql_base
+
+        if condicoes:
+            sql_consulta += " WHERE " + " OR ".join(condicoes)
+        sql_consulta += " ORDER BY p.id ASC; "
+
+        try:
+            cursor = conexao.cursor() 
+            
+            cursor.execute(sql_consulta, args if args else None)
+            dados = cursor.fetchall()
+        finally:
+            cursor.close()
+        
+        headers = ["ID_Juiz", "Nome", "País", "Cargo", "Data de Admissão"]
+        for col, header in enumerate(headers):
+            header_label = customtkinter.CTkLabel(
+                self.table_frame, 
+                text=header, 
+                font=customtkinter.CTkFont(weight="bold")
+            )
+            header_label.grid(row=0, column=col, padx=10, pady=5, sticky="w")
+            self.table_frame.grid_columnconfigure(col, weight=1)
+
+        for i, (id, nome, pais, cargo, data) in enumerate(dados):
+            row = i + 1
+            data_formatada = data.strftime('%d/%m/%Y')
+            juiz_id = id # O ID é crucial para a exclusão
+
+            # Colunas de dados
+            customtkinter.CTkLabel(self.table_frame, text=id).grid(row=row, column=0, padx=10, pady=5)
+            customtkinter.CTkLabel(self.table_frame, text=nome).grid(row=row, column=1, padx=10, pady=5)
+            customtkinter.CTkLabel(self.table_frame, text=pais).grid(row=row, column=2, padx=10, pady=5)
+            customtkinter.CTkLabel(self.table_frame, text=cargo).grid(row=row, column=3, padx=10, pady=5)
+            customtkinter.CTkLabel(self.table_frame, text=data_formatada).grid(row=row, column=4, padx=10, pady=5)
+
+            # Botões de Ação
+            customtkinter.CTkButton(
+                self.table_frame, 
+                text="Editar", 
+                width=60, 
+                fg_color="#00BF6E", 
+                state="disabled"
+            ).grid(row=row, column=5, padx=5, pady=5)
+
+            customtkinter.CTkButton(
+                self.table_frame, 
+                text="Excluir", 
+                width=60, 
+                fg_color="#E30000", 
+                command=lambda id=juiz_id: self.confirmar_exclusao(id)
+            ).grid(row=row, column=6, padx=5, pady=5)
 
 
+    def confirmar_exclusao(self, juiz_id):
+        chave_seguranca = "excluir/sim/registro/juiz" 
 
-
-
-    def open_dialog_event(self):
         dialog = customtkinter.CTkInputDialog(
-            text="Tem certeza que deseja excluir esse registro?\nDigite fwifljljeopwr pra continuar", 
-            title="⚠️ Exclusão de Registros ⚠️")
-        print("CTkInputDialog:", dialog.get_input()
-    )
+            text=f"Tem certeza que deseja excluir o Juiz ID {juiz_id}?\nDigite a chave {chave_seguranca} para continuar:", 
+            title="⚠️ Exclusão de Registros ⚠️"
+        )
+        
+        input_text = dialog.get_input()
+
+        if input_text == chave_seguranca:
+            self.excluir_do_banco(juiz_id)
+            
+        elif input_text is not None:
+            print("Chave de segurança incorreta. Exclusão cancelada.")
+
+
+    def excluir_do_banco(self, juiz_id):
+        cursor = conexao.cursor()
+        sql_delete_juiz = "DELETE FROM Juiz WHERE pessoa_id = %s"
+        cursor.execute(sql_delete_juiz, (juiz_id,))
+
+        sql_delete_pessoa = "DELETE FROM Pessoa WHERE id = %s"
+        cursor.execute(sql_delete_pessoa, (juiz_id,))
+        
+        conexao.commit()
+        print(f"Registro do Juiz ID {juiz_id} excluído com sucesso.")
+        cursor.close()
+        self.desenhar_tabela()
         
     def limpar_juiz(self):
         for nome_campo, campo in self.form_entries.items():
@@ -222,4 +315,3 @@ class JuizFrame(customtkinter.CTkFrame):
                     campo.set("Selecione o cargo")
                 else:
                     campo.set(campo.cget("values")[0])
-    
