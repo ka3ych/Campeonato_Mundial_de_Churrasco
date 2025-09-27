@@ -11,12 +11,34 @@ config = {
 	"port": "5432",
 	"database": "database_name"
 }
-
+# Script para criação da tabela com alguns valores já inclusos
 CREATE_TABLES = """
-CREATE TABLE IF NOT EXISTS pessoas (
-    id SERIAL PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL
-);
+    CREATE TABLE Pessoa (
+        id SERIAL PRIMARY KEY,
+        nome VARCHAR(100) NOT NULL,
+        pais_origem VARCHAR(50),
+        telefone VARCHAR(20),
+        data_nascimento DATE,
+        cargo VARCHAR(50)
+    );
+
+    CREATE TABLE Juiz (
+        pessoa_id INTEGER PRIMARY KEY,
+        data_inicio DATE,
+        FOREIGN KEY (pessoa_id) REFERENCES Pessoa(id)
+    );
+
+    INSERT INTO Pessoa (id, nome, pais_origem, cargo)
+    VALUES 
+    (1, 'João Silva', 'Brasil', 'Chef Executivo'),
+    (2, 'Maria Garcia', 'Espanha', 'Crítica Gastronômica'),
+    (3, 'Peter Jones', 'Estados Unidos', 'Mestre Churrasqueiro');
+
+    INSERT INTO Juiz (pessoa_id, data_inicio)
+    VALUES 
+    (1, '2020-09-12'),
+    (2, '2010-03-15'),
+    (3, '2019-11-30');
 """
 
 def setup_database():

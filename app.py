@@ -109,14 +109,6 @@ class App(customtkinter.CTk):
         )
         self.logout_btn.grid(row=6, column=0, padx=10, pady=(0, 60), sticky="s")
 
-        self.appearance_mode_menu = customtkinter.CTkOptionMenu(
-            self.navigation_frame, 
-            values=["Light", "Dark", "System"],
-            height=40,
-            command=self.change_appearance_mode_event
-        )
-        self.appearance_mode_menu.grid(row=5, column=0, padx=10, pady=30, sticky="s")
-
     def select_frame_by_name(self, name):
         # set button color for selected button
         self.home_button.configure(fg_color=("gray75", "gray25") if name == "home" else "transparent")
@@ -145,9 +137,6 @@ class App(customtkinter.CTk):
 
     def juiz_frame_event(self):
         self.select_frame_by_name("frame_3")
-
-    def change_appearance_mode_event(self, new_appearance_mode):
-        customtkinter.set_appearance_mode(new_appearance_mode)
 
 
     
