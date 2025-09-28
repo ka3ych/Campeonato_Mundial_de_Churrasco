@@ -1,6 +1,7 @@
 import customtkinter
 import psycopg2
 from psycopg2 import sql
+from datetime import datetime
 
 conexao = psycopg2.connect (
 	user="postgres",
@@ -93,13 +94,26 @@ class JuizFrame(customtkinter.CTkFrame):
         self.frame_analitico.grid_columnconfigure((0,1,2), weight=1)
 
         # Total de juízes
+
         self.total_card = customtkinter.CTkFrame(
             self.frame_analitico, 
             fg_color="#00BF6E"
         )
         self.total_card.grid(row=0, column=0,  padx=(0, 20), sticky="nsew")
-        customtkinter.CTkLabel(self.total_card, text="Total de Juízes", font=customtkinter.CTkFont(size=14)).pack(padx=10, pady=5)
-        customtkinter.CTkLabel(self.total_card, text="9", font=customtkinter.CTkFont(size=36, weight="bold")).pack(padx=10, pady=10) # ALTERAR DEPOIS PARA DEIXAR DINÂMICO
+        customtkinter.CTkLabel(
+            self.total_card, 
+            text="Total de Juízes", 
+            font=customtkinter.CTkFont(size=14)
+        ).pack(padx=10, pady=5)
+        
+        self.total_label = customtkinter.CTkLabel(
+            self.total_card, 
+            text="...", 
+            font=customtkinter.CTkFont(size=36, weight="bold")
+        )
+        self.total_label.pack(padx=10, pady=10) 
+
+        self.atualizar_total_juiz()
 
         # Placeholder para Gráfico 1 (Juízes por País) -> ARRUMAR
         self.chart1_card = customtkinter.CTkFrame(self.frame_analitico, fg_color="#AB00D1")
@@ -133,8 +147,8 @@ class JuizFrame(customtkinter.CTkFrame):
 
         campos = [
             ("Nome", "Digite o nome completo", "entry"),
-            ("País", "Selecione o país", "dropdown", ["Brasil", "Espanha", "Estados Unidos"]),
-            ("Cargo", "Selecione o cargo", "dropdown", ["Che Executivo", "Mestre Churrasqueiro", "Crítica Gastronômica"]),
+            ("País", "Selecione o país", "dropdown", ["Brasil", "Espanha", "Estados Unidos", "China", "Argentina"]),
+            ("Cargo", "Selecione o cargo", "dropdown", ["Chef Executivo", "Mestre Churrasqueiro", "Crítica Gastronômica", "Jogador de algo"]),
             ("Telefone", "(00) 00000-0000", "entry"),
             ("Data de Nascimento", "dd/mm/aaaa", "entry")
         ]
@@ -175,7 +189,7 @@ class JuizFrame(customtkinter.CTkFrame):
                 text="Salvar Juiz", 
                 fg_color="#00BF6E", 
                 height=30,
-                # command=self.salvar_juiz # Conectar depois à sua função de salvar no banco de dados
+                command=self.salvar_juiz
             )
             self.salvar_button.grid(row=len(campos)*2 + 4, column=0, padx=20, pady=(20, 10), sticky="ew")
 
@@ -188,6 +202,52 @@ class JuizFrame(customtkinter.CTkFrame):
                 command=self.limpar_juiz
             )
             self.limpar_button.grid(row=len(campos)*2 + 5, column=0, padx=20, pady=(0, 20), sticky="ew")
+
+    def atualizar_total_juiz(self):
+        cursor = conexao.cursor()
+        qtd_juiz_sql = 'SELECT COUNT(*) FROM Juiz'
+        cursor.execute(qtd_juiz_sql)
+        qtd_juiz = cursor.fetchone()[0]
+        self.total_label.configure(text=str(qtd_juiz))
+        cursor.close()
+
+    def salvar_juiz(self):
+
+        nome = self.form_entries['nome'].get()
+        pais_origem = self.form_entries['país'].get()
+        cargo = self.form_entries['cargo'].get()
+        telefone = self.form_entries['telefone'].get()
+        data_nascimento_str = self.form_entries['data_de_nascimento'].get()
+
+        if not nome or pais_origem == "Selecione o país" or cargo == "Selecione o cargo":
+                print("ERRO: Nome, País e Cargo são obrigatórios.")
+                return
+        data_nascimento = datetime.strptime(data_nascimento_str, '%d/%m/%Y').date()
+
+        data_inicio = datetime.now().date()
+
+        cursor = conexao.cursor()
+        sql_pessoa = """
+            INSERT INTO Pessoa(nome, pais_origem, telefone, data_nascimento)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id;
+        """
+        cursor.execute(sql_pessoa, (nome, pais_origem, telefone, data_nascimento))
+
+        pessoa_id = cursor.fetchone()[0]
+
+        sql_juiz = """
+            INSERT INTO Juiz(pessoa_id, cargo, data_inicio)
+            VALUES (%s, %s, %s)
+        """
+        cursor.execute(sql_juiz, (pessoa_id, cargo, data_inicio))
+
+        conexao.commit()
+        cursor.close()
+
+        self.limpar_juiz()
+        self.desenhar_tabela()
+        self.atualizar_total_juiz()
     
     def aplica_filtro_cargo(self, cargo):
         self.desenhar_tabela(filtro_cargo=cargo)
@@ -301,6 +361,7 @@ class JuizFrame(customtkinter.CTkFrame):
         print(f"Registro do Juiz ID {juiz_id} excluído com sucesso.")
         cursor.close()
         self.desenhar_tabela()
+        self.atualizar_total_juiz()
         
     def limpar_juiz(self):
         for nome_campo, campo in self.form_entries.items():
