@@ -45,12 +45,17 @@ Seguir os passos abaixo para clonar o projeto, configurar o banco de dados e exe
     ```
 
 3.  **Configure e Crie o Banco de Dados**
-    Certifique-se de que o seu servidor **PostgreSQL** está rodando. Em seguida, edite o arquivo `config.py` (se você tiver um, ou crie-o) com as suas credenciais de acesso ao PostgreSQL (user e senha conforme configurados na sua máquina)
+    Certifique-se de que o seu servidor **PostgreSQL** está rodando. Em seguida, edite os arquivos `setup_database.py` e `juizes_frame` com as suas credenciais de acesso ao PostgreSQL (user e senha conforme configurados na sua máquina).
 
-    Após a configuração, execute o script de inicialização do banco de dados para criar as tabelas necessárias:
+    No PostgreSQL, crie um novo banco de dados chamado **`churras`**.
+
+    Após a configuração, execute o script de inicialização do banco de dados para criar a tabela necessária:
     ```bash
     python setup_database.py
     ```
+
+    > 📝 **Note:** Aqui estamos criando apenas a tabela de Pessoa e Juízes para que a aplicação funcione.
+
 
 4.  **Execute o Programa**
     Agora você pode iniciar a aplicação principal.
