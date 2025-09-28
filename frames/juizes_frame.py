@@ -115,15 +115,46 @@ class JuizFrame(customtkinter.CTkFrame):
 
         self.atualizar_total_juiz()
 
-        # Placeholder para Gráfico 1 (Juízes por País) -> ARRUMAR
-        self.chart1_card = customtkinter.CTkFrame(self.frame_analitico, fg_color="#AB00D1")
+        self.chart1_card = customtkinter.CTkFrame(
+            self.frame_analitico, 
+            fg_color="#AB00D1"
+        )
         self.chart1_card.grid(row=0, column=1, padx=(0, 20), sticky="nsew")
-        customtkinter.CTkLabel(self.chart1_card, text="[ Gráfico: Juízes por País ]").pack(padx=10, pady=20)
-        
+
+        customtkinter.CTkLabel(
+            self.chart1_card, 
+            text="Países representados",
+            font=customtkinter.CTkFont(size=14)
+        ).pack(padx=10, pady=5)
+
+        self.paises_label = customtkinter.CTkLabel(
+            self.chart1_card, 
+            text="...", 
+            font=customtkinter.CTkFont(size=36, weight="bold")
+        )
+        self.paises_label.pack(padx=10, pady=10) 
+
         # Placeholder para Gráfico 2 (Juízes por Cargo) -> ARRUMAR
-        self.chart2_card = customtkinter.CTkFrame(self.frame_analitico, fg_color="#00B9D1")
+        self.chart2_card = customtkinter.CTkFrame(
+            self.frame_analitico, 
+            fg_color="#00B9D1"
+        )
         self.chart2_card.grid(row=0, column=2, sticky="nsew")
-        customtkinter.CTkLabel(self.chart2_card, text="[ Gráfico: Juízes por Cargo ]").pack(padx=10, pady=20)
+
+        customtkinter.CTkLabel(
+            self.chart2_card, 
+            text="Mestres Churrasqueiros",
+            font=customtkinter.CTkFont(size=14)
+        ).pack(padx=10, pady=5)
+
+        self.mestres_label = customtkinter.CTkLabel(
+            self.chart2_card, 
+            text="...", 
+            font=customtkinter.CTkFont(size=36, weight="bold")
+        )
+        self.mestres_label.pack(padx=10, pady=10) 
+
+        self.atualiza_metricas()
 
 
         # FRAME PARA A TABELA
@@ -211,6 +242,20 @@ class JuizFrame(customtkinter.CTkFrame):
         self.total_label.configure(text=str(qtd_juiz))
         cursor.close()
 
+    def atualiza_metricas(self):
+        cursor = conexao.cursor()
+        sql_paises = 'SELECT COUNT(DISTINCT pais_origem) FROM Pessoa WHERE pais_origem IS NOT NULL'
+        cursor.execute(sql_paises)
+        total_paises = cursor.fetchone()[0]
+        self.paises_label.configure(text=str(total_paises))
+
+        sql_mestres = "SELECT COUNT(pessoa_id) FROM Juiz WHERE cargo = 'Mestre Churrasqueiro'"
+        cursor.execute(sql_mestres)
+        total_mestres = cursor.fetchone()[0]
+        self.mestres_label.configure(text=str(total_mestres))
+
+        cursor.close()
+
     def salvar_juiz(self):
 
         nome = self.form_entries['nome'].get()
@@ -248,6 +293,7 @@ class JuizFrame(customtkinter.CTkFrame):
         self.limpar_juiz()
         self.desenhar_tabela()
         self.atualizar_total_juiz()
+        self.atualiza_metricas()
     
     def aplica_filtro_cargo(self, cargo):
         self.desenhar_tabela(filtro_cargo=cargo)
@@ -362,6 +408,7 @@ class JuizFrame(customtkinter.CTkFrame):
         cursor.close()
         self.desenhar_tabela()
         self.atualizar_total_juiz()
+        self.atualiza_metricas()
         
     def limpar_juiz(self):
         for nome_campo, campo in self.form_entries.items():
