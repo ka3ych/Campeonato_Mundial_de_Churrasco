@@ -1,4 +1,6 @@
 import customtkinter
+import subprocess
+import os
 
 from frames.home_frame import HomeFrame
 from frames.team_frame import TeamFrame
@@ -102,6 +104,13 @@ class App(customtkinter.CTk):
         )
         self.juiz_button.grid(row=3, column=0, sticky="ew")
 
+        self.excel_btn = customtkinter.CTkButton(
+            self.navigation_frame, corner_radius=5, height=40, border_spacing=10, text="Ver Planilha",
+            fg_color="#1D6A38", hover_color="#154d28", anchor="w",
+            command=self.abrir_excel
+        )
+        self.excel_btn.grid(row=5, column=0, padx=10, pady=(0, 5), sticky="s")
+
         self.logout_btn = customtkinter.CTkButton(
             self.navigation_frame, corner_radius=5, height=40, border_spacing=10, text="Logout",
             fg_color="#E33B14", hover_color="#B82100", anchor="w",
@@ -129,6 +138,11 @@ class App(customtkinter.CTk):
         else:
             self.juiz_frame.grid_forget()
     
+    def abrir_excel(self):
+        """Abre o churras.xlsx com o aplicativo padrão do sistema."""
+        caminho = os.path.join(os.path.dirname(os.path.abspath(__file__)), "churras.xlsx")
+        subprocess.Popen(["xdg-open", caminho])
+
     def home_button_event(self):
         self.select_frame_by_name("home")
 
