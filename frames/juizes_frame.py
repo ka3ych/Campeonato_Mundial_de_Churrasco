@@ -1,15 +1,6 @@
 import customtkinter
-import psycopg2
-from psycopg2 import sql
+import banco_excel
 from datetime import datetime
-
-conexao = psycopg2.connect (
-	user="postgres",
-	password="admin123",
-	host="127.0.0.1",
-	port="5432",
-	database="churras"
-)
 
 class JuizFrame(customtkinter.CTkFrame):
     def __init__(self, parent, images):
@@ -45,13 +36,7 @@ class JuizFrame(customtkinter.CTkFrame):
         self.frame_filtros.grid(row=2, column=0, columnspan=9, padx=20, pady=0,sticky="nsew")
         self.frame_filtros.grid_columnconfigure((0,1,2,3,4,5,6, 7,8, 9, 10), weight=1)
 
-        cursor = conexao.cursor() 
-        consulta_pais = 'SELECT DISTINCT pais_origem FROM Pessoa WHERE pais_origem IS NOT NULL ORDER BY pais_origem'
-        cursor.execute(consulta_pais)
-        dados_paises = cursor.fetchall()
-        cursor.close()
-
-        lista_paises = [pais[0] for pais in dados_paises if pais[0] is not None]
+        lista_paises = banco_excel.get_paises()
         lista_paises.insert(0, "Todos")
     
         self.filtro_pais = customtkinter.CTkOptionMenu(
@@ -64,13 +49,7 @@ class JuizFrame(customtkinter.CTkFrame):
         self.filtro_pais.set("Filtrar por país")
         self.filtro_pais.grid(row=0, column=0, padx=(0, 5), pady=(10,10), sticky="w")
 
-        cursor = conexao.cursor()
-        consulta_cargo = 'SELECT DISTINCT cargo FROM Juiz WHERE cargo IS NOT NULL ORDER BY cargo'
-        cursor.execute(consulta_cargo)
-        dados_cargos = cursor.fetchall()
-        cursor.close()
-
-        lista_cargos = [cargo[0] for cargo in dados_cargos if cargo[0] is not None]
+        lista_cargos = banco_excel.get_cargos()
         lista_cargos.insert(0, "Todos")
 
 
@@ -235,26 +214,15 @@ class JuizFrame(customtkinter.CTkFrame):
             self.limpar_button.grid(row=len(campos)*2 + 5, column=0, padx=20, pady=(0, 20), sticky="ew")
 
     def atualizar_total_juiz(self):
-        cursor = conexao.cursor()
-        qtd_juiz_sql = 'SELECT COUNT(*) FROM Juiz'
-        cursor.execute(qtd_juiz_sql)
-        qtd_juiz = cursor.fetchone()[0]
+        qtd_juiz = banco_excel.get_total_juizes()
         self.total_label.configure(text=str(qtd_juiz))
-        cursor.close()
 
     def atualiza_metricas(self):
-        cursor = conexao.cursor()
-        sql_paises = 'SELECT COUNT(DISTINCT pais_origem) FROM Pessoa WHERE pais_origem IS NOT NULL'
-        cursor.execute(sql_paises)
-        total_paises = cursor.fetchone()[0]
+        total_paises = banco_excel.get_total_paises()
         self.paises_label.configure(text=str(total_paises))
 
-        sql_mestres = "SELECT COUNT(pessoa_id) FROM Juiz WHERE cargo = 'Mestre Churrasqueiro'"
-        cursor.execute(sql_mestres)
-        total_mestres = cursor.fetchone()[0]
+        total_mestres = banco_excel.get_total_mestres()
         self.mestres_label.configure(text=str(total_mestres))
-
-        cursor.close()
 
     def salvar_juiz(self):
 
@@ -271,24 +239,7 @@ class JuizFrame(customtkinter.CTkFrame):
 
         data_inicio = datetime.now().date()
 
-        cursor = conexao.cursor()
-        sql_pessoa = """
-            INSERT INTO Pessoa(nome, pais_origem, telefone, data_nascimento)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id;
-        """
-        cursor.execute(sql_pessoa, (nome, pais_origem, telefone, data_nascimento))
-
-        pessoa_id = cursor.fetchone()[0]
-
-        sql_juiz = """
-            INSERT INTO Juiz(pessoa_id, cargo, data_inicio)
-            VALUES (%s, %s, %s)
-        """
-        cursor.execute(sql_juiz, (pessoa_id, cargo, data_inicio))
-
-        conexao.commit()
-        cursor.close()
+        banco_excel.inserir_juiz(nome, pais_origem, cargo, telefone, data_nascimento, data_inicio)
 
         self.limpar_juiz()
         self.desenhar_tabela()
@@ -306,37 +257,7 @@ class JuizFrame(customtkinter.CTkFrame):
         for widget in self.table_frame.winfo_children():
             widget.destroy()
         
-        sql_base = """
-            SELECT 
-                p.id, p.nome, p.pais_origem, j.cargo, j.data_inicio
-            FROM 
-                Pessoa p JOIN Juiz j ON p.id = j.pessoa_id
-        """
-
-        args = []
-        condicoes = []
-
-        if filtro_pais and filtro_pais != "Todos":
-            condicoes.append(" p.pais_origem = %s")
-            args.append(filtro_pais)
-
-        if filtro_cargo and filtro_cargo != "Todos":
-            condicoes.append(" j.cargo = %s")
-            args.append(filtro_cargo)
-        
-        sql_consulta = sql_base
-
-        if condicoes:
-            sql_consulta += " WHERE " + " OR ".join(condicoes)
-        sql_consulta += " ORDER BY p.id ASC; "
-
-        try:
-            cursor = conexao.cursor() 
-            
-            cursor.execute(sql_consulta, args if args else None)
-            dados = cursor.fetchall()
-        finally:
-            cursor.close()
+        dados = banco_excel.get_juizes(filtro_pais=filtro_pais, filtro_cargo=filtro_cargo)
         
         headers = ["ID_Juiz", "Nome", "País", "Cargo", "Data de Admissão"]
         for col, header in enumerate(headers):
@@ -396,16 +317,8 @@ class JuizFrame(customtkinter.CTkFrame):
 
 
     def excluir_do_banco(self, juiz_id):
-        cursor = conexao.cursor()
-        sql_delete_juiz = "DELETE FROM Juiz WHERE pessoa_id = %s"
-        cursor.execute(sql_delete_juiz, (juiz_id,))
-
-        sql_delete_pessoa = "DELETE FROM Pessoa WHERE id = %s"
-        cursor.execute(sql_delete_pessoa, (juiz_id,))
-        
-        conexao.commit()
+        banco_excel.excluir_juiz(juiz_id)
         print(f"Registro do Juiz ID {juiz_id} excluído com sucesso.")
-        cursor.close()
         self.desenhar_tabela()
         self.atualizar_total_juiz()
         self.atualiza_metricas()
